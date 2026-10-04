@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🔑 Quản lý License – Chủ Nhiệm</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--bg2:#161820;--card:#1c1f2e;--card2:#22263a;
+  --border:#2d3154;--accent:#6c8ef5;--accent2:#a78bfa;
+  --green:#34d399;--red:#f87171;--yellow:#fbbf24;--orange:#fb923c;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;font-size:15px;min-height:100vh;padding-bottom:60px}
+.header{background:linear-gradient(135deg,#1a1060 0%,#0f1117 100%);padding:18px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.header h1{font-size:15px;font-weight:800}
+.header p{font-size:11px;color:var(--text2)}
+.btn{border:none;border-radius:10px;padding:10px 14px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1117}
+.btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.btn-danger{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.4)}
+.btn-sm{padding:6px 10px;font-size:12px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.wrap{padding:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:800;margin-bottom:12px}
+.field-label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px;margin-top:12px}
+.field-label:first-of-type{margin-top:0}
+.inp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
+.inp:focus{border-color:var(--accent)}
+.row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.row>div{flex:1;min-width:120px}
+.pw-box{display:flex;gap:8px;align-items:center}
+.pw-box .inp{flex:1}
+.result-box{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:10px;padding:12px;font-size:13px;line-height:1.8;margin-top:12px;display:none}
+.result-box code{color:var(--green);background:rgba(52,211,153,.15);padding:1px 6px;border-radius:4px}
+.err-box{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:12px;font-size:13px;color:var(--red);margin-top:12px;display:none}
+.lic-item{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.lic-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.lic-email{font-weight:700;font-size:13.5px;word-break:break-all}
+.badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.badge.active{background:rgba(52,211,153,.15);color:var(--green)}
+.badge.expired{background:rgba(248,113,113,.15);color:var(--red)}
+.badge.locked{background:rgba(148,163,184,.15);color:var(--text2)}
+.lic-meta{font-size:12px;color:var(--text2);margin-bottom:10px}
+.lic-actions{display:flex;gap:6px;flex-wrap:wrap}
+.search-bar{margin-bottom:14px}
+.empty{text-align:center;color:var(--text3);font-size:13px;padding:20px 0}
+.auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px}
+.auth-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;max-width:360px;width:100%}
+.auth-card h2{font-size:17px;font-weight:800;text-align:center;margin-bottom:4px}
+.auth-card p.sub{font-size:12px;color:var(--text2);text-align:center;margin-bottom:18px}
+.auth-card input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 12px;color:var(--text);font-family:inherit;font-size:14px;outline:none;margin-bottom:10px}
+.auth-card input:focus{border-color:var(--accent)}
+.auth-card button{width:100%}
+.auth-msg{font-size:12px;text-align:center;margin-top:12px;line-height:1.6;min-height:16px}
+.auth-msg.err{color:var(--red)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--card2);border:1px solid var(--border);padding:12px 18px;border-radius:12px;font-size:13px;font-weight:700;z-index:600;transition:transform .25s;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <h2>🔑 Quản lý License</h2>
+    <p class="sub">Đăng nhập bằng tài khoản quản trị</p>
+    <input type="email" id="adminEmail" placeholder="Email quản trị" autocomplete="username">
+    <input type="password" id="adminPass" placeholder="Mật khẩu" autocomplete="current-password">
+    <button class="btn btn-primary" id="adminLoginBtn" onclick="doAdminLogin()">Đăng nhập</button>
+    <div class="auth-msg" id="adminAuthMsg"></div>
+  </div>
+</div>
+
+<div id="appWrap" style="display:none">
+  <div class="toast" id="toast"></div>
+  <div class="header">
+    <div>
+      <h1>🔑 Quản lý License</h1>
+      <p>App Chủ Nhiệm – Quản Lý Lớp</p>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="doLogout()">Đăng xuất</button>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="field-label">Sản phẩm đang quản lý</div>
+      <select class="inp" id="productSelect" onchange="onProductChange()" style="margin-bottom:0">
+        <option value="licenses_chunhiem">👨‍🏫 Chủ Nhiệm – Quản Lý Lớp</option>
+        <option value="licenses_congnghe">📝 Thiết kế đề Công nghệ (1 năm)</option>
+        <option value="licenses">📝 Thiết kế đề kiểm tra các môn (1 năm)</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h2>➕ Cấp license mới</h2>
+      <div class="field-label">Email khách hàng</div>
+      <input type="email" class="inp" id="newEmail" placeholder="vd: giaovien.a@gmail.com">
+      <div class="field-label">Mật khẩu tạm</div>
+      <div class="pw-box">
+        <input type="text" class="inp" id="newPass" placeholder="Mật khẩu cho khách đăng nhập">
+        <button class="btn btn-secondary btn-sm" onclick="genPassword()">🎲 Tạo ngẫu nhiên</button>
+      </div>
+      <div class="row">
+        <div>
+          <div class="field-label">Thời hạn</div>
+          <select class="inp" id="newMonths">
+            <option value="1">1 tháng</option>
+            <option value="3">3 tháng</option>
+            <option value="6">6 tháng</option>
+            <option value="12" selected>12 tháng (1 năm)</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn btn-primary" id="createBtn" onclick="createLicense()">✅ Tạo tài khoản & cấp license</button>
+      </div>
+      <div class="result-box" id="createResult"></div>
+      <div class="err-box" id="createErr"></div>
+    </div>
+
+    <div class="card">
+      <h2>🔗 Cấp license cho tài khoản đã có sẵn</h2>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">
+        Dùng khi email đã có tài khoản đăng nhập từ trước (báo lỗi "Email đã có tài khoản" ở trên).
+        Vào Firebase Console → Authentication → Users, tìm email đó, bấm vào để xem/copy <b>User UID</b>, dán vào ô dưới.
+      </p>
+      <div class="field-label">Email khách hàng (chỉ để ghi chú)</div>
+      <input type="email" class="inp" id="existEmail" placeholder="vd: levantongbc@gmail.com">
+      <div class="field-label">User UID (copy từ Firebase Console)</div>
+      <input type="text" class="inp" id="existUid" placeholder="vd: MsFaJDaayyZp5Jhixzn9rQeVhUr1">
+      <div class="row">
+        <div>
+          <div class="field-label">Thời hạn</div>
+          <select class="inp" id="existMonths">
+            <option value="1">1 tháng</option>
+            <option value="3">3 tháng</option>
+            <option value="6">6 tháng</option>
+            <option value="12" selected>12 tháng (1 năm)</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn btn-primary" id="existBtn" onclick="createLicenseForExisting()">✅ Cấp license cho UID này</button>
+      </div>
+      <div class="result-box" id="existResult"></div>
+      <div class="err-box" id="existErr"></div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Danh sách license</h2>
+      <input type="text" class="inp search-bar" id="searchBox" placeholder="🔍 Tìm theo email..." oninput="renderList()">
+      <div id="licList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====== CẤU HÌNH ====== */
+const firebaseConfig={
+  apiKey:"AIzaSyBmn54Z8ZZ2lGDQexVWyJiLD4K2h7jf6Iw",
+  authDomain:"de-kiem-tra-9aba7.firebaseapp.com",
+  projectId:"de-kiem-tra-9aba7"
+};
+// Danh sách email được phép dùng trang quản trị này (phải khớp với Firestore Rules)
+const ADMIN_EMAILS=["levantong31@gmail.com"];
+const LICENSE_COLLECTION_DEFAULT='licenses_chunhiem';
+let CURRENT_COLLECTION=LICENSE_COLLECTION_DEFAULT;
+
+function onProductChange(){
+  CURRENT_COLLECTION=document.getElementById('productSelect').value;
+  document.getElementById('createErr').style.display='none';
+  document.getElementById('createResult').style.display='none';
+  document.getElementById('existErr').style.display='none';
+  document.getElementById('existResult').style.display='none';
+  loadLicenses();
+}
+
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
+const db=firebase.firestore();
+
+let allLicenses=[];
+
+function showToast(msg,isErr=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.color=isErr?'var(--red)':'var(--text)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+/* ====== ĐĂNG NHẬP ADMIN ====== */
+function setAuthMsg(msg){document.getElementById('adminAuthMsg').textContent=msg||'';}
+
+function doAdminLogin(){
+  const email=document.getElementById('adminEmail').value.trim();
+  const pass=document.getElementById('adminPass').value;
+  if(!email||!pass){setAuthMsg('Vui lòng nhập email và mật khẩu');return;}
+  document.getElementById('adminLoginBtn').disabled=true;
+  setAuthMsg('Đang đăng nhập...');
+  auth.signInWithEmailAndPassword(email,pass).catch(err=>{
+    document.getElementById('adminLoginBtn').disabled=false;
+    setAuthMsg('Sai email hoặc mật khẩu.');
+  });
+}
+
+function doLogout(){auth.signOut();}
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    if(!ADMIN_EMAILS.includes(user.email)){
+      setAuthMsg('Tài khoản này không có quyền quản trị.');
+      auth.signOut();
+      return;
+    }
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('appWrap').style.display='';
+    loadLicenses();
+  }else{
+    document.getElementById('authScreen').style.display='flex';
+    document.getElementById('appWrap').style.display='none';
+    document.getElementById('adminLoginBtn').disabled=false;
+  }
+});
+
+/* ====== TẠO LICENSE MỚI ====== */
+function genPassword(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let pw='';
+  for(let i=0;i<10;i++) pw+=chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('newPass').value=pw;
+}
+
+async function createLicense(){
+  const email=document.getElementById('newEmail').value.trim();
+  const pass=document.getElementById('newPass').value;
+  const months=parseInt(document.getElementById('newMonths').value,10);
+  const errBox=document.getElementById('createErr');
+  const okBox=document.getElementById('createResult');
+  errBox.style.display='none';okBox.style.display='none';
+
+  if(!email||!pass){errBox.textContent='Vui lòng nhập email và mật khẩu.';errBox.style.display='block';return;}
+  if(pass.length<6){errBox.textContent='Mật khẩu phải từ 6 ký tự trở lên (yêu cầu của Firebase).';errBox.style.display='block';return;}
+
+  const btn=document.getElementById('createBtn');
+  btn.disabled=true;btn.textContent='Đang tạo...';
+
+  // Dùng 1 app Firebase phụ, tạm thời, để tạo user mới mà KHÔNG làm mất phiên đăng nhập admin hiện tại
+  const tempApp=firebase.initializeApp(firebaseConfig,'temp_'+Date.now());
+  try{
+    const cred=await tempApp.auth().createUserWithEmailAndPassword(email,pass);
+    const uid=cred.user.uid;
+    await tempApp.auth().signOut();
+
+    const hetHan=new Date();
+    hetHan.setMonth(hetHan.getMonth()+months);
+
+    await db.collection(CURRENT_COLLECTION).doc(uid).set({
+      email:email,
+      active:true,
+      ngayTao:firebase.firestore.Timestamp.now(),
+      ngayHetHan:firebase.firestore.Timestamp.fromDate(hetHan)
+    });
+
+    okBox.innerHTML=`✅ Đã tạo license thành công!<br>
+      Email: <code>${email}</code><br>
+      Mật khẩu: <code>${pass}</code><br>
+      Hạn dùng: <code>${hetHan.toLocaleDateString('vi-VN')}</code><br>
+      <span style="color:var(--text2)">→ Gửi email + mật khẩu này cho khách để họ đăng nhập vào app.</span>`;
+    okBox.style.display='block';
+
+    document.getElementById('newEmail').value='';
+    document.getElementById('newPass').value='';
+    loadLicenses();
+  }catch(e){
+    let msg='Có lỗi xảy ra: '+e.message;
+    if(e.code==='auth/email-already-in-use') msg='Email này đã có tài khoản. Hãy dùng mục "Gia hạn" bên dưới thay vì tạo mới.';
+    errBox.textContent=msg;
+    errBox.style.display='block';
+  }finally{
+    try{await tempApp.delete();}catch(_){}
+    btn.disabled=false;btn.textContent='✅ Tạo tài khoản & cấp license';
+  }
+}
+
+/* ====== DANH SÁCH / GIA HẠN / KHOÁ ====== */
+async function loadLicenses(){
+  document.getElementById('licList').innerHTML='<div class="empty">Đang tải...</div>';
+  try{
+    const snap=await db.collection(CURRENT_COLLECTION).get();
+    allLicenses=[];
+    snap.forEach(doc=>{
+      const d=doc.data();
+      allLicenses.push({
+        id:doc.id,
+        email:d.email||'(không rõ email)',
+        active:d.active!==false,
+        ngayHetHan:d.ngayHetHan&&d.ngayHetHan.toDate?d.ngayHetHan.toDate():null
+      });
+    });
+    allLicenses.sort((a,b)=>(b.ngayHetHan?.getTime()||0)-(a.ngayHetHan?.getTime()||0));
+    renderList();
+  }catch(e){
+    document.getElementById('licList').innerHTML='<div class="empty" style="color:var(--red)">Lỗi tải danh sách: '+e.message+'</div>';
+  }
+}
+
+function renderList(){
+  const kw=document.getElementById('searchBox').value.trim().toLowerCase();
+  const list=allLicenses.filter(l=>l.email.toLowerCase().includes(kw));
+  const box=document.getElementById('licList');
+  if(!list.length){box.innerHTML='<div class="empty">Chưa có license nào.</div>';return;}
+  const now=new Date();
+  box.innerHTML=list.map(l=>{
+    const expired=!l.ngayHetHan||l.ngayHetHan<now;
+    let badge=l.active?(expired?'<span class="badge expired">Hết hạn</span>':'<span class="badge active">Còn hạn</span>'):'<span class="badge locked">Đã khoá</span>';
+    const hanStr=l.ngayHetHan?l.ngayHetHan.toLocaleDateString('vi-VN'):'—';
+    return `<div class="lic-item">
+      <div class="lic-top"><div class="lic-email">${l.email}</div>${badge}</div>
+      <div class="lic-meta">Hạn dùng: ${hanStr}</div>
+      <div class="lic-actions">
+        <button class="btn btn-secondary btn-sm" onclick="renewLicense('${l.id}',1)">+1 tháng</button>
+        <button class="btn btn-secondary btn-sm" onclick="renewLicense('${l.id}',12)">+1 năm</button>
+        ${l.active
+          ?`<button class="btn btn-danger btn-sm" onclick="toggleActive('${l.id}',false)">🔒 Khoá</button>`
+          :`<button class="btn btn-primary btn-sm" onclick="toggleActive('${l.id}',true)">🔓 Mở khoá</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function createLicenseForExisting(){
+  const email=document.getElementById('existEmail').value.trim();
+  const uid=document.getElementById('existUid').value.trim();
+  const months=parseInt(document.getElementById('existMonths').value,10);
+  const errBox=document.getElementById('existErr');
+  const okBox=document.getElementById('existResult');
+  errBox.style.display='none';okBox.style.display='none';
+
+  if(!uid){errBox.textContent='Vui lòng dán User UID (copy từ Firebase Console → Authentication → Users).';errBox.style.display='block';return;}
+
+  const btn=document.getElementById('existBtn');
+  btn.disabled=true;btn.textContent='Đang xử lý...';
+  try{
+    const hetHan=new Date();
+    hetHan.setMonth(hetHan.getMonth()+months);
+    await db.collection(CURRENT_COLLECTION).doc(uid).set({
+      email:email||'(không rõ email)',
+      active:true,
+      ngayTao:firebase.firestore.Timestamp.now(),
+      ngayHetHan:firebase.firestore.Timestamp.fromDate(hetHan)
+    },{merge:true});
+
+    okBox.innerHTML=`✅ Đã cấp license cho UID: <code>${uid}</code><br>Hạn dùng: <code>${hetHan.toLocaleDateString('vi-VN')}</code>`;
+    okBox.style.display='block';
+    document.getElementById('existEmail').value='';
+    document.getElementById('existUid').value='';
+    loadLicenses();
+  }catch(e){
+    errBox.textContent='Có lỗi xảy ra: '+e.message;
+    errBox.style.display='block';
+  }finally{
+    btn.disabled=false;btn.textContent='✅ Cấp license cho UID này';
+  }
+}
+
+async function renewLicense(id,addMonths){
+  const lic=allLicenses.find(l=>l.id===id);
+  if(!lic) return;
+  const base=(lic.ngayHetHan&&lic.ngayHetHan>new Date())?new Date(lic.ngayHetHan):new Date();
+  base.setMonth(base.getMonth()+addMonths);
+  await db.collection(CURRENT_COLLECTION).doc(id).update({
+    ngayHetHan:firebase.firestore.Timestamp.fromDate(base),
+    active:true
+  });
+  showToast('✓ Đã gia hạn đến '+base.toLocaleDateString('vi-VN'));
+  loadLicenses();
+}
+
+async function toggleActive(id,newState){
+  await db.collection(CURRENT_COLLECTION).doc(id).update({active:newState});
+  showToast(newState?'✓ Đã mở khoá':'✓ Đã khoá tài khoản');
+  loadLicenses();
+}
+</script>
+</body>
+</html>
